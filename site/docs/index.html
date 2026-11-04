@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lantern Docs</title>
+<link rel="icon" type="image/png" sizes="32x32" href="../icon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../icon-192.png">
 <meta name="description" content="Developer and agent documentation for Lantern, a PICO-8 mining game about a dying lamp.">
 <style>
   :root {
@@ -60,6 +62,7 @@
 <h2 id="structure">Project structure</h2>
 <pre><code>lantern.p8                    the whole game: code, sprites, sound
 tools/export.sh               rebuilds site/ from the cart
+tools/make-icon.py            draws the web icons in site/
 site/index.html, index.js     the committed web export
 site/cart.sha256              hash of the cart that site/ was built from
 site/docs/index.html          this page
