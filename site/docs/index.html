@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lantern Docs</title>
+<meta name="description" content="Developer and agent documentation for Lantern, a PICO-8 mining game about a dying lamp.">
+<style>
+  :root {
+    --bg: #14121c; --panel: #1f1b2b; --ink: #e8e2d4; --soft: #a59f94;
+    --oil: #ffa300; --line: #3a3448; --link: #ffc65c;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body {
+    margin: 0 auto; max-width: 760px; padding: 32px 16px 80px; color: var(--ink);
+    background: var(--bg);
+    font: 17px/1.6 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  h1, h2 { font-family: ui-monospace, Menlo, Consolas, monospace; line-height: 1.2; }
+  h1 { font-size: 2.6rem; margin: 0 0 4px; color: var(--oil); }
+  h2 { font-size: 1.3rem; margin: 44px 0 8px; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+  a { color: var(--link); }
+  .sub { color: var(--soft); margin: 0 0 16px; }
+  code { font: 0.9em ui-monospace, Menlo, Consolas, monospace; background: var(--panel); padding: 1px 5px; border-radius: 3px; }
+  pre { background: var(--panel); padding: 12px 14px; overflow-x: auto; border-radius: 4px; }
+  pre code { background: none; padding: 0; }
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.95em; }
+  th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--soft); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Lantern</h1>
+<p class="sub">A tiny miner, a dying lamp, and a very deep hole.</p>
+<p>
+  <a href="../">Play the game</a> &middot;
+  <a href="https://github.com/polarispixels/lantern">Source on GitHub</a> &middot;
+  <a href="https://github.com/polarispixels/lantern/blob/main/CLAUDE.md">CLAUDE.md</a>
+</p>
+
+<h2 id="concept">Concept</h2>
+<p>
+  The miner digs down a shaft one screen at a time. Lamp oil drains constantly, and the
+  circle of light around the miner shrinks with it. Gems give points and are worth more
+  the deeper you go. Oil cans refill the lamp. The tension is whether to dig deeper for
+  better gems or stay near the oil. At zero oil the game shows "lamp out" with the final
+  depth and score, then restarts on a button press.
+</p>
+
+<h2 id="controls">Controls</h2>
+<div class="scroll"><table>
+  <tr><th>Action</th><th>Keyboard</th><th>Phone</th></tr>
+  <tr><td>Move / aim</td><td>Arrow keys</td><td>On-screen d-pad</td></tr>
+  <tr><td>Dig in the facing direction</td><td>X</td><td>On-screen X button</td></tr>
+</table></div>
+
+<h2 id="structure">Project structure</h2>
+<pre><code>lantern.p8                    the whole game: code, sprites, sound
+tools/export.sh               rebuilds site/ from the cart
+site/index.html, index.js     the committed web export
+site/cart.sha256              hash of the cart that site/ was built from
+site/docs/index.html          this page
+.github/workflows/deploy.yml  publishes site/ to GitHub Pages</code></pre>
+<p>
+  The <code>__lua__</code> section runs in order: constants, init/reset, level generation,
+  update (player, bats, popups), draw (world, darkness, HUD, game over), and small helpers.
+  The code is heavily commented on purpose. It doubles as a way to learn PICO-8.
+</p>
+
+<h2 id="tiles">Tiles and sound</h2>
+<p>The sprite number is the tile id, so <code>map()</code> draws the level directly.</p>
+<div class="scroll"><table>
+  <tr><th>Sprite</th><th>Use</th></tr>
+  <tr><td>0, 1, 2</td><td>Empty, dirt, rock</td></tr>
+  <tr><td>3, 4, 5</td><td>Green, blue and red gems</td></tr>
+  <tr><td>6</td><td>Oil can</td></tr>
+  <tr><td>7-8, 11</td><td>Miner walking, miner aiming down</td></tr>
+  <tr><td>9-10</td><td>Bat flapping</td></tr>
+</table></div>
+<p>Sound effects: 0 dig, 1 gem, 2 oil, 3 bat hit, 4 lamp out, 5 rock clunk.</p>
+
+<h2 id="generation">Level generation</h2>
+<p>
+  Each screen is built at runtime with <code>mset</code>, so the cart's map section is
+  unused. Play covers map cells (0,0) to (15,14), drawn 8px down to leave room for the HUD.
+  Falling off the bottom generates the next screen.
+</p>
+<p>
+  Rocks may stack vertically but never touch another rock sideways or diagonally. That
+  guarantees the miner can always step aside and dig down, so never break this rule when
+  tweaking generation.
+</p>
+
+<h2 id="tuning">Tuning reference</h2>
+<p>
+  Tune these before restructuring anything. <code>screen</code> counts screens descended,
+  starting at 0. One tile is one metre, and a screen is 15 tiles.
+</p>
+<div class="scroll"><table>
+  <tr><th>Value</th><th>Setting</th><th>Effect</th></tr>
+  <tr><td><code>oil_max</code></td><td>100</td><td>A full lamp</td></tr>
+  <tr><td><code>oil_drain</code></td><td>0.075 per frame</td><td>About 44 seconds from full to empty</td></tr>
+  <tr><td><code>oil_can</code></td><td>35</td><td>Oil gained from a can</td></tr>
+  <tr><td><code>bat_cost</code></td><td>15</td><td>Oil lost to a bat</td></tr>
+  <tr><td>Gem value</td><td>10, 20 or 30, plus <code>screen*5</code></td><td>Green, blue or red</td></tr>
+  <tr><td>Rock chance</td><td><code>0.08+screen*0.01</code>, max 0.2</td><td>Per tile</td></tr>
+  <tr><td>Gem chance</td><td><code>0.025+screen*0.004</code>, max 0.06</td><td>Per tile</td></tr>
+  <tr><td>Oil chance</td><td><code>0.02-screen*0.0015</code>, min 0.008</td><td>Per tile</td></tr>
+  <tr><td>Bats</td><td><code>1+screen\2</code>, max 4</td><td>Per screen, and each one gets faster with depth</td></tr>
+</table></div>
+
+<h2 id="deploy">Deployment</h2>
+<p>
+  GitHub Actions can't run PICO-8 because it's a licensed binary, so the web export is built
+  locally and committed. PICO-8's licence allows exported HTML and JavaScript to be
+  redistributed.
+</p>
+<pre><code>tools/export.sh                  # rebuild site/ from lantern.p8
+git add -A &amp;&amp; git commit         # include the new export
+git push                         # main deploys to GitHub Pages</code></pre>
+<p>
+  Every push to <code>main</code> publishes <code>site/</code>. The workflow fails if
+  <code>lantern.p8</code> no longer matches <code>site/cart.sha256</code>, which means the
+  export step was skipped. The live game is at
+  <a href="https://polarispixels.github.io/lantern/">polarispixels.github.io/lantern/</a>.
+</p>
+
+</body>
+</html>

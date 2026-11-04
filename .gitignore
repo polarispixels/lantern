@@ -1,0 +1,13 @@
+# Stray PICO-8 exports in the repo root. The published build lives in site/.
+/*.html
+/*.js
+*.bin/
+*.zip
+*.p8.png
+# PICO-8 / editor scratch
+*.p8.bak
+*.log
+# OS cruft
+.DS_Store
+Thumbs.db
+desktop.ini
